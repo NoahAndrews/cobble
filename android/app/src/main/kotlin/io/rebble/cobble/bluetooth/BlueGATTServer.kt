@@ -2,6 +2,7 @@ package io.rebble.cobble.bluetooth
 
 import android.bluetooth.*
 import android.content.Context
+import io.rebble.cobble.datasources.IncomingPacketsListener
 import io.rebble.libpebblecommon.ProtocolHandler
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -18,7 +19,8 @@ class BlueGATTServer(
         private val targetDevice: BluetoothDevice,
         private val context: Context,
         private val serverScope: CoroutineScope,
-        private val protocolHandler: ProtocolHandler
+        private val protocolHandler: ProtocolHandler,
+        private val incomingPacketsListener: IncomingPacketsListener
 ) : BluetoothGattServerCallback() {
     private val serverReady = CompletableDeferred<Boolean>()
     private val connectionStatusChannel = Channel<Boolean>(0)
@@ -198,12 +200,14 @@ class BlueGATTServer(
                                     Timber.d("Re-sending previous ACK")
                                     sendAck(lastAck!!.sequence)
                                 } else {
-                                    requestReset()
+                                    throw IOException("Unpexpected sequence. Resetting...")
                                 }
                             }
                         }
                         GATTPacket.PacketType.RESET -> {
-                            if (seq != 0) Timber.w("Got reset on non zero sequence")
+                            if (seq != 0) {
+                                throw IOException("Got reset on non zero sequence")
+                            }
                             gattConnectionVersion = packet.getPPoGConnectionVersion()
                             Timber.d("gattConnectionVersion updated: $gattConnectionVersion")
                             requestReset()
@@ -231,8 +235,7 @@ class BlueGATTServer(
                     serverScope.launch {
                         delay(5000)
                         if (!initialReset) {
-                            Timber.w("No initial reset from watch after 5s, requesting reset")
-                            requestReset()
+                            throw IOException("No initial reset from watch after 5s, requesting reset")
                         }
                     }
                 }
@@ -420,6 +423,7 @@ class BlueGATTServer(
                     throw IOException("Packet timeout")
                 }
 
+                incomingPacketsListener.receivedPackets.emit(packetData)
                 protocolHandler.receivePacket(packetData.toUByteArray())
             }
         }
@@ -486,6 +490,7 @@ class BlueGATTServer(
         bluetoothGattServer.close()
 
         watchToPhonePipe.source.close()
+        serverScope.cancel()
     }
 }
 

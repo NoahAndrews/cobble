@@ -1,15 +1,19 @@
 import 'package:cobble/domain/db/dao/app_dao.dart';
+import 'package:cobble/infrastructure/backgroundcomm/BackgroundRpc.dart';
 import 'package:cobble/infrastructure/pigeons/pigeons.g.dart';
+import 'package:cobble/util/async_value_extensions.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:uuid_type/uuid_type.dart';
 
 import '../db/models/app.dart';
+import 'requests/app_reorder_request.dart';
 
 class AppManager extends StateNotifier<List<App>> {
   final appInstallControl = AppInstallControl();
   final AppDao appDao;
+  final BackgroundRpc backgroundRpc;
 
-  AppManager(this.appDao) : super(List.empty()) {
+  AppManager(this.appDao, this.backgroundRpc) : super(List.empty()) {
     refresh();
   }
 
@@ -34,17 +38,34 @@ class AppManager extends StateNotifier<List<App>> {
     await refresh();
   }
 
-  Future<void> reorderApp(Uuid uuid, int newPosition) async {
-    final request = AppReorderRequest();
-    request.uuid = uuid.toString();
-    request.newPosition = newPosition;
+  Future<bool> getAppInfoAndBeginAppInstall(String uri) async {
+    final appInfoRequestWrapper = StringWrapper();
+    appInfoRequestWrapper.value = uri;
+    final appInfo = await appInstallControl.getAppInfo(appInfoRequestWrapper);
 
-    await appInstallControl.beginAppOrderChange(request);
+    final wrapper = InstallData();
+    wrapper.uri = uri;
+    wrapper.appInfo = appInfo;
+
+    final success = await appInstallControl.beginAppInstall(wrapper);
+
+    await refresh();
+
+    return success.value;
+  }
+
+  Future<void> reorderApp(Uuid uuid, int newPosition) async {
+    final request = AppReorderRequest(uuid, newPosition);
+
+    final result = await backgroundRpc.triggerMethod(request);
+    result.resultOrThrow();
+
     await refresh();
   }
 }
 
 final appManagerProvider = AutoDisposeStateNotifierProvider<AppManager, List<App>>((ref) {
   final dao = ref.watch(appDaoProvider);
-  return AppManager(dao);
+  final rpc = ref.read(backgroundRpcProvider);
+  return AppManager(dao, rpc);
 });
