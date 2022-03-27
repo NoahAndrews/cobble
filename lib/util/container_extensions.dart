@@ -17,7 +17,7 @@ extension ContainerExtension on ProviderContainer {
     // ignore: close_sinks
     late StreamController<T> controller;
     controller = StreamController(onListen: () {
-      subscription = listen(provider, mayHaveChanged: (sub) {
+      subscription = listen<T>(provider, mayHaveChanged: (sub) {
         controller.add(sub.read());
       });
 
@@ -30,7 +30,7 @@ extension ContainerExtension on ProviderContainer {
   }
 }
 
-extension ProviderReferenceExtension on ProviderReference {
+extension ProviderReferenceExtension on Ref {
   Future<AsyncValue<T>> readUntilFirstSuccessOrError<T>(
       ProviderBase<Object, AsyncValue<T>> provider) {
     return this.container.listenStream(provider).firstSuccessOrError() as Future<AsyncValue<T>>;

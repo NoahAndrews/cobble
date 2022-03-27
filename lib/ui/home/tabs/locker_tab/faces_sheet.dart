@@ -68,7 +68,7 @@ class FacesPreview extends StatelessWidget {
 
 class FacesSheet {
   static void showModal({
-    required BuildContext context,
+    WidgetRef ref, required BuildContext context,
     required App face,
     bool compatible = false,
     required AppManager appManager,

@@ -21,7 +21,7 @@ class AppManager extends StateNotifier<List<App>> {
     state = await appDao.getAllInstalledPackages();
   }
 
-  Future<void> deleteApp(Uuid uuid) async {
+  Future<void> deleteApp(WidgetRef ref, Uuid uuid) async {
     final uuidWrapper = StringWrapper();
     uuidWrapper.value = uuid.toString();
 
@@ -29,7 +29,7 @@ class AppManager extends StateNotifier<List<App>> {
     await refresh();
   }
 
-  void beginAppInstall(String uri, PbwAppInfo appInfo) async {
+  void beginAppInstall(WidgetRef ref, String uri, PbwAppInfo appInfo) async {
     final wrapper = InstallData();
     wrapper.uri = uri;
     wrapper.appInfo = appInfo;
@@ -38,7 +38,7 @@ class AppManager extends StateNotifier<List<App>> {
     await refresh();
   }
 
-  Future<bool> getAppInfoAndBeginAppInstall(String uri) async {
+  Future<bool> getAppInfoAndBeginAppInstall(WidgetRef ref, String uri) async {
     final appInfoRequestWrapper = StringWrapper();
     appInfoRequestWrapper.value = uri;
     final appInfo = await appInstallControl.getAppInfo(appInfoRequestWrapper);
@@ -54,7 +54,7 @@ class AppManager extends StateNotifier<List<App>> {
     return success.value;
   }
 
-  Future<void> reorderApp(Uuid uuid, int newPosition) async {
+  Future<void> reorderApp(WidgetRef ref, Uuid uuid, int newPosition) async {
     final request = AppReorderRequest(uuid, newPosition);
 
     final result = await backgroundRpc.triggerMethod(request);

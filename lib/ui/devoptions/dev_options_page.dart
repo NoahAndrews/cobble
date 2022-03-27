@@ -6,18 +6,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class DevOptionsPage extends HookWidget implements CobbleScreen {
+class DevOptionsPage extends HookConsumerWidget implements CobbleScreen {
   @override
-  Widget build(BuildContext context) {
-    final devConControl = useProvider(devConnectionProvider);
-    final devConnState = useProvider(devConnectionProvider.state);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final devConControl = ref.watch(devConnectionProvider);
+    final devConnState = ref.watch(devConnectionProvider.state);
 
-    final preferences = useProvider(preferencesProvider);
-    final bootUrl = useProvider(bootUrlProvider).data?.value ?? "";
+    final preferences = ref.watch(preferencesProvider);
+    final bootUrl = ref.watch(bootUrlProvider).data?.value ?? "";
     final shouldOverrideBoot =
-        useProvider(shouldOverrideBootProvider).data?.value ?? false;
+        ref.watch(shouldOverrideBootProvider).data?.value ?? false;
     final overrideBootUrl =
-        useProvider(overrideBootValueProvider).data?.value ?? "";
+        ref.watch(overrideBootValueProvider).data?.value ?? "";
 
     final bootUrlController = useTextEditingController();
     final bootOverrideUrlController = useTextEditingController();

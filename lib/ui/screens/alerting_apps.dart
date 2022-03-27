@@ -24,17 +24,17 @@ class _App {
   _App(this.name, this.enabled, this.packageId);
 }
 
-class AlertingApps extends HookWidget implements CobbleScreen {
-  final packageDetails = useProvider(packageDetailsProvider).getPackageList();
+class AlertingApps extends HookConsumerWidget implements CobbleScreen {
+  final packageDetails = ref.watch(packageDetailsProvider).getPackageList();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final random = Random();
     final filter = useState(SheetOnChanged.initial);
 
     final sheet = CobbleSheet.useInline();
-    final mutedPackages = useProvider(notificationsMutedPackagesProvider);
-    final preferences = useProvider(preferencesProvider);
+    final mutedPackages = ref.watch(notificationsMutedPackagesProvider);
+    final preferences = ref.watch(preferencesProvider);
 
     return CobbleScaffold.tab(
         title: tr.alertingApps.title,

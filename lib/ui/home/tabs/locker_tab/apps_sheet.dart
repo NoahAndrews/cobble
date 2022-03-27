@@ -13,7 +13,7 @@ import 'package:cobble/domain/entities/hardware_platform.dart';
 
 class AppsSheet {
   static void showModal({
-    required BuildContext context,
+    WidgetRef ref, required BuildContext context,
     required App app,
     bool compatible = false,
     required AppManager appManager,

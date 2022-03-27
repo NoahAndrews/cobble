@@ -41,7 +41,7 @@ class DevConnection extends StateNotifier<DevConnState> {
     _incomingWatchPacketsSubscription = null;
   }
 
-  void handleDevConnection(WebSocket socket, String ip) {
+  void handleDevConnection(WidgetRef ref, WidgetRef ref, WebSocket socket, String ip) {
     if (_connectedSocket == null) {
       _connectedSocket = socket;
       _updateState();
@@ -69,7 +69,7 @@ class DevConnection extends StateNotifier<DevConnState> {
     }
   }
 
-  void onPacketReceivedFromWebsocket(WebSocket socket, Uint8List indata) {
+  void onPacketReceivedFromWebsocket(WidgetRef ref, WidgetRef ref, WebSocket socket, Uint8List indata) {
     if (indata[0] == _packetFromWebsocketRelayToWatch) {
       Uint8List packet = indata.sublist(1);
       ListWrapper packetDataWrapper = ListWrapper();
@@ -99,7 +99,7 @@ class DevConnection extends StateNotifier<DevConnState> {
     connectedSocket.add(bytes);
   }
 
-  void _beginAppInstall(Uint8List pbwData, WebSocket socket) async {
+  void _beginAppInstall(WidgetRef ref, WidgetRef ref, Uint8List pbwData, WebSocket socket) async {
     final dir = await getTemporaryDirectory();
     final tempPbwFile = File("${dir.path}/tmp.pbw");
 
@@ -123,7 +123,7 @@ class DevConnection extends StateNotifier<DevConnState> {
     socket.add(bytes);
   }
 
-  Future<void> start() async {
+  Future<void> start(WidgetRef ref, WidgetRef ref) async {
     _localIp = await (NetworkInfo().getWifiIP()) ?? "";
 
     final server = await HttpServer.bind(

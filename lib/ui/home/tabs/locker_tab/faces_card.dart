@@ -7,7 +7,7 @@ import 'package:cobble/ui/home/tabs/locker_tab/faces_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg_provider/flutter_svg_provider.dart';
 
-class FacesCard extends StatelessWidget {
+class FacesCard extends ConsumerWidget {
   final App face;
   final bool compatible;
   final AppManager appManager;
@@ -24,7 +24,7 @@ class FacesCard extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Card(
       key: key,
       child: Container(
@@ -62,7 +62,7 @@ class FacesCard extends StatelessWidget {
                     outlined: false,
                     icon: RebbleIcons.menu_vertical,
                     onPressed: () => FacesSheet.showModal(
-                      context: context,
+                      ref, context: context,
                       face: face,
                       compatible: compatible,
                       appManager: appManager,

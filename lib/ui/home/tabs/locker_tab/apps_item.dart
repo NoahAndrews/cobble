@@ -9,7 +9,7 @@ import 'package:cobble/ui/theme/with_cobble_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg_provider/flutter_svg_provider.dart';
 
-class AppsItem extends StatelessWidget {
+class AppsItem extends ConsumerWidget {
   final App app;
   final bool compatible;
   final AppManager appManager;
@@ -26,7 +26,7 @@ class AppsItem extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       key: key,
       height: 72.0,
@@ -52,7 +52,7 @@ class AppsItem extends StatelessWidget {
               title: app.longName,
               subtitle: app.company,
               onTap: () => AppsSheet.showModal(
-                context: context,
+                ref, context: context,
                 app: app,
                 compatible: compatible,
                 appManager: appManager,
