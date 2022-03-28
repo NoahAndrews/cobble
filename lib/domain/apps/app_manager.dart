@@ -30,9 +30,7 @@ class AppManager extends StateNotifier<List<App>> {
   }
 
   void beginAppInstall(WidgetRef ref, String uri, PbwAppInfo appInfo) async {
-    final wrapper = InstallData();
-    wrapper.uri = uri;
-    wrapper.appInfo = appInfo;
+    final wrapper = InstallData(uri: uri, appInfo: appInfo);
     await appInstallControl.beginAppInstall(wrapper);
 
     await refresh();
@@ -43,9 +41,7 @@ class AppManager extends StateNotifier<List<App>> {
     appInfoRequestWrapper.value = uri;
     final appInfo = await appInstallControl.getAppInfo(appInfoRequestWrapper);
 
-    final wrapper = InstallData();
-    wrapper.uri = uri;
-    wrapper.appInfo = appInfo;
+    final wrapper = InstallData(uri: uri, appInfo: appInfo);
 
     final success = await appInstallControl.beginAppInstall(wrapper);
 
