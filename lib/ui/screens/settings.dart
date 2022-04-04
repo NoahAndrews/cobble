@@ -1,3 +1,5 @@
+import 'package:cobble/domain/logging.dart';
+import 'package:cobble/infrastructure/datasources/web_services.dart';
 import 'package:cobble/localization/localization.dart';
 import 'package:cobble/ui/common/components/cobble_card.dart';
 import 'package:cobble/ui/common/components/cobble_tile.dart';
@@ -14,42 +16,55 @@ import 'package:cobble/ui/theme/with_cobble_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg_provider/flutter_svg_provider.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class Settings extends StatelessWidget implements CobbleScreen {
+class Settings extends ConsumerWidget implements CobbleScreen {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userData = ref.watch(wsUserProvider);
     return CobbleScaffold.tab(
       title: tr.settings.title,
       child: ListView(
         children: [
-          CobbleCard.inList(
-            leading: Svg('images/app_icon.svg'),
-            title: tr.settings.account,
-            subtitle: 'support@rebble.io',
-            child: Column(
-              children: [
-                CobbleTile.info(
-                  leading: RebbleIcons.dictation_microphone,
-                  title: tr.settings.subscription.title,
-                  subtitle: tr.settings.subscription.subtitle,
-                ),
-                CobbleTile.info(
-                  leading: RebbleIcons.timeline_pin,
-                  title: tr.settings.timeline.title,
-                  subtitle: tr.settings.timeline.subtitle,
-                ),
-              ],
-            ),
-            actions: [
-              CobbleCardAction(
-                label: tr.settings.signOut,
-                onPressed: () {},
-              ),
-              CobbleCardAction(
-                label: tr.settings.manageAccount,
-                onPressed: () {},
-              ),
-            ],
+          userData.when(
+              data: (data) {
+                return CobbleCard.inList(
+                  leading: Svg('images/app_icon.svg'),
+                  title: tr.settings.account,
+                  subtitle: data != null ? '${data.name}\n${data.email}' : 'Not logged in', // TODO(Noah): Move to en.json
+                  child: Column(
+                    children: [
+                      CobbleTile.info(
+                        leading: RebbleIcons.dictation_microphone,
+                        title: tr.settings.subscription.title,
+                        subtitle: tr.settings.subscription.subtitleNotSubscribed,
+                      ),
+                      CobbleTile.info(
+                        leading: RebbleIcons.timeline_pin,
+                        title: tr.settings.timeline.title,
+                        subtitle: tr.settings.timeline.subtitle,
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    CobbleCardAction(
+                      label: tr.settings.signOut,
+                      onPressed: () {},
+                    ),
+                    CobbleCardAction(
+                      label: tr.settings.manageAccount,
+                      onPressed: () {},
+                    ),
+                  ],
+                );
+              },
+              error: (error, stackTrace) {
+                Log.e('Failed to load user info: error=$error stackTrace=$stackTrace');
+                return Text('Failed to load user information');
+              },
+              loading: () {
+                return CircularProgressIndicator();
+              }
           ),
           CobbleTile.navigation(
             leading: RebbleIcons.notification,

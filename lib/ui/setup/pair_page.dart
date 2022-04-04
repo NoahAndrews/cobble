@@ -196,9 +196,7 @@ class PairPage extends HookConsumerWidget implements CobbleScreen {
             child: CobbleButton(
               outlined: false,
               label: tr.common.skip,
-              onPressed: () => context.pushAndRemoveAllBelow(
-                HomePage(),
-              ),
+              onPressed: () => context.pushReplacement(MoreSetup()),
             ),
           )
       ],

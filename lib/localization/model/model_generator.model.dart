@@ -1501,13 +1501,24 @@ class LanguageSettingsSubscription {
   final String title;
 
   @JsonKey(
-    name: 'subtitle',
+    name: 'subtitle_subscribed',
     required: true,
     disallowNullValue: true,
   )
-  final String subtitle;
+  final String subtitleSubscribed;
 
-  LanguageSettingsSubscription(this.title, this.subtitle);
+  @JsonKey(
+    name: 'subtitle_not_subscribed',
+    required: true,
+    disallowNullValue: true,
+  )
+  final String subtitleNotSubscribed;
+
+  LanguageSettingsSubscription(
+    this.title,
+    this.subtitleSubscribed,
+    this.subtitleNotSubscribed,
+  );
 
   factory LanguageSettingsSubscription.fromJson(Map<String, dynamic> json) =>
       _$LanguageSettingsSubscriptionFromJson(json);

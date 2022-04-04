@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stream_transform/stream_transform.dart';
 
+// TODO(Noah): Remove other direct usages of shared_preferences Flutter package
 class Preferences {
   final SharedPreferences _sharedPrefs;
 

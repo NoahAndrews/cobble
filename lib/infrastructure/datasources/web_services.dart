@@ -1,63 +1,83 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cobble/infrastructure/datasources/preferences.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:http/http.dart' as http;
 
-class WSAuthUser {
-  final String? email;
-  final String? id;
-  final String? name;
-  WSAuthUser(this.email, this.id, this.name);
+import '../../domain/logging.dart';
 
-  static Future<WSAuthUser> get() async {
-    Map<String, dynamic> boot = await WSBoot.bootConf;
-    Completer<WSAuthUser> _completer = new Completer<WSAuthUser>();
-    HttpClient client = HttpClient();
-    Uri userUri = Uri.parse(boot['config']['links']['authentication/me'] +
-        "?access_token=${WSBoot.token}");
-    HttpClientResponse res = await (await client.getUrl(userUri)).done;
-    print(res.statusCode);
-    res.listen((event) {
-      print(String.fromCharCodes(event));
-      Map<String, dynamic> user = jsonDecode(String.fromCharCodes(event));
-      _completer
-          .complete(WSAuthUser(user['email'], user['id'], user['name']));
-    });
-    return _completer.future;
+final wsTokenProvider = Provider((ref) {
+  final bootUrl = ref.watch(bootUrlProvider).value;
+  if (bootUrl == null) {
+    return null;
+  } else {
+    return Uri.parse(bootUrl).queryParameters[_tokenQueryParameter];
   }
+});
+
+// Works: https://boot.rebble.io/api/stage2/android/v3/1?access_token=W35chqeGs3F3htobjILuGTsoFOG5zQ&amp;t=1648308070
+// Fails: https://boot.rebble.io/api/stage2//android/v3/1405/?access_token=yNUnVCQ31NNfGlCJFzN1O38YiCxGa1&t=1648326594
+
+// TODO(NoahAndrews): Once riverpod 2.0 is out, provide a cacheTime parameter to
+//                    autoDispose() with a value of 1 hour
+final bootDataProvider = FutureProvider.autoDispose<Map<String, dynamic>?>((ref) async {
+  final unparsedBootUrl = ref.watch(bootUrlProvider).value;
+  Log.d('bootDataProvider: bootUrl=$unparsedBootUrl'); // TODO(Noah): Check if this is initially null
+  if (unparsedBootUrl == null) {
+    return null;
+  } else {
+    Log.d('Retrieving boot data');
+    Uri bootUrl = Uri.parse(unparsedBootUrl);
+    final adjustedPathSegments = List<String>.from(bootUrl.pathSegments);
+    adjustedPathSegments.remove(''); // Necessary in case the boot URL ends in a slash
+    // TODO(NoahAndrews): Use https://pub.dev/packages/package_info_plus to get the build number
+    adjustedPathSegments.addAll(['android', 'v3', '1405']); //TODO: iOS specific path when using iOS?
+      Uri adjustedUrl = bootUrl.replace(pathSegments: adjustedPathSegments);
+    final json = await http.read(adjustedUrl);
+    Log.d('boot info: $json'); // TODO(Noah): Remove
+    final result = jsonDecode(json);
+    // We successfully retrieved and parsed the result, so we should cache it instead of
+    // auto-disposing it.
+    ref.maintainState = true;
+    return result;
+  }
+});
+
+// TODO(NoahAndrews): Once riverpod 2.0 is out, provide a cacheTime parameter to
+//                    autoDispose() with a value of 1 hour
+// TODO(NoahAndrews): As long as `token` is non-null, hang on to the previous WSUser instance
+final wsUserProvider = FutureProvider.autoDispose((ref) async {
+  final bootData = await ref.watch(bootDataProvider.future);
+  final token = ref.watch(wsTokenProvider);
+  if (bootData == null) {
+    return null;
+  } else {
+    Uri userUri = Uri.parse(bootData['config']['links']['authentication/me'] +
+        "?access_token=$token");
+    final userJson = await http.read(userUri);
+    Map<String, dynamic> user = jsonDecode(userJson);
+
+    final String? email = user['email'];
+    final String? id = user['id'];
+    final String? name = user['name'];
+
+    if (email != null && id != null && name != null) {
+      return WSUser(user['email'], user['id'], user['name']);
+    } else {
+      return null;
+    }
+  }
+});
+
+// TODO(NoahAndrews): See conversation around here to get a more general-purpose token
+//                    https://discord.com/channels/221364737269694464/256368641732247552/960399010236084244
+
+class WSUser {
+  final String email;
+  final String id;
+  final String name;
+  WSUser(this.email, this.id, this.name);
 }
 
-class WSBoot {
-  static Map<String, dynamic>? _conf;
-  static int _confExpiry = 0;
-  static String? token;
-  static Future<Map<String, dynamic>> get bootConf async {
-    Completer<Map<String, dynamic>> _completer =
-        new Completer<Map<String, dynamic>>();
-    if (_conf == null || DateTime.now().millisecondsSinceEpoch >= _confExpiry) {
-      _confExpiry = DateTime.now().millisecondsSinceEpoch + (1000 * 60 * 60);
-
-      SharedPreferences sp = await SharedPreferences.getInstance();
-      if (!sp.containsKey("boot"))
-        _completer.complete(null);
-      else {
-        HttpClient client = HttpClient();
-
-        String bootUrl = sp.getString("boot")!;
-        String params = bootUrl.substring(bootUrl.indexOf('?'));
-        Uri actualUrl = Uri.parse(bootUrl.substring(0, bootUrl.indexOf('?')) +
-            '/android/v3/1405/' +
-            params); //TODO: iOS specific path when using iOS?
-        token = actualUrl.queryParameters['access_token'];
-
-        HttpClientResponse res = await (await client.getUrl(actualUrl)).done;
-        res.listen((event) {
-          _completer.complete(jsonDecode(String.fromCharCodes(event)));
-        });
-      }
-    } else
-      _completer.complete(_conf);
-    return _completer.future;
-  }
-}
+const _tokenQueryParameter = 'access_token';

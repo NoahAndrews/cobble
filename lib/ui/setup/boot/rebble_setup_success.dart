@@ -6,14 +6,20 @@ import 'package:cobble/ui/router/cobble_navigator.dart';
 import 'package:cobble/ui/router/cobble_scaffold.dart';
 import 'package:cobble/ui/router/cobble_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../domain/logging.dart';
 
 class RebbleSetupSuccess extends HookConsumerWidget implements CobbleScreen {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preferences = ref.watch(preferencesProvider);
+    // TODO(NoahAndrews): At the moment, the user data will always be null
+    //                    because we're changing the boot URL shared pref from
+    //                    Kotlin, which does not trigger the riverpod
+    //                    SharedPrefs stream
+    final userData = ref.watch(wsUserProvider);
     return CobbleScaffold.page(
       title: tr.setup.success.title,
       child: Column(
@@ -22,17 +28,21 @@ class RebbleSetupSuccess extends HookConsumerWidget implements CobbleScreen {
             tr.setup.success.subtitle,
             style: Theme.of(context).textTheme.headline3,
           ),
-          FutureBuilder<WSAuthUser>(
-            future: WSAuthUser.get(),
-            builder:
-                (BuildContext context, AsyncSnapshot<WSAuthUser> snapshot) {
-              if (snapshot.hasData) {
-                return Text(
-                    tr.setup.success.welcome(name: snapshot.data!.name!));
-              } else {
+          userData.when(
+              data: (data) {
+                if (data == null) {
+                  return Text(" ");
+                } else {
+                  return Text(tr.setup.success.welcome(name: data.name));
+                }
+              },
+              error: (error, stackTrace) {
                 return Text(" ");
+
+              },
+              loading: () {
+                return CircularProgressIndicator();
               }
-            },
           )
         ],
       ),

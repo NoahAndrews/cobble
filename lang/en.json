@@ -189,7 +189,8 @@
     "account": "Rebble account",
     "subscription": {
       "title": "Voice and weather subscription",
-      "subtitle": "Not subscribed"
+      "subtitle_subscribed": "Subscribed",
+      "subtitle_not_subscribed": "Not subscribed"
     },
     "timeline": {
       "title": "Timeline sync",
